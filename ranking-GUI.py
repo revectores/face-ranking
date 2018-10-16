@@ -1,14 +1,13 @@
-# coding:utf-8
-
 from __future__ import division
 from tkinter import *
 from tkinter.constants import *
 from tkinter.messagebox import *
 from PIL import Image, ImageTk
 import os
+import sys
 # from scipy import stats
 
-PATH = "1849968224/"
+PATH = "training_imgs/"
 storage = []
 imgIndex = -1
 imgLabel = {}
@@ -75,10 +74,15 @@ def nextImg():
         imgIndex += 1
         if imgIndex>=len(imgNames):
             showinfo(TITLE, "Thank you for the ranking!")
-            exit()
+            root.destroy()
+            sys.exit()
         imgName = imgNames[imgIndex]
         if not imgName in imgNameRecords:
             break
+        if not os.path.exists(PATH):
+            showerror(TITLE, "Traning set not found.")
+            root.destroy()
+            sys.exit()
     imgFile = resize(Image.open(PATH + imgName))
     img = ImageTk.PhotoImage(imgFile)
     imgLabel = Label(pictureFrame, image=img)
@@ -105,8 +109,8 @@ recordNum = len(records)
 imgNames = os.listdir(PATH)
 
 if recordNum>=len(imgNames):
-    showinfo(TITLE, "You've completed the ranking!")
-    exit()
+    showinfo(TITLE, "You've already completed the ranking!")
+    sys.exit()
 
 '''
 GUI drawing
