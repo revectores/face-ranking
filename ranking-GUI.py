@@ -1,143 +1,125 @@
-from __future__ import division
-from tkinter import *
-from tkinter.constants import *
-from tkinter.messagebox import *
-from PIL import Image, ImageTk
 import os
 import sys
-# from scipy import stats
+
+import tkinter as tk
+from tkinter.constants import TOP, BOTTOM, LEFT
+from tkinter.messagebox import showinfo, showerror
+from PIL import Image, ImageTk
 
 PATH = "training_imgs/"
-storage = []
-imgIndex = -1
-imgLabel = {}
-imgName = ""
-PHOTO_WIDTH = 224
-PHOTO_HEIGHT = 224
+PHOTO_WIDTH = PHOTO_HEIGHT = 224
+MODE = "HEIGHT"
 TITLE = "Raking Data Collection"
 
 '''
-Map the input ranking range to normal distribution
-'''
-'''
-def rankMap(rankings,k):
-    x = np.random.uniform(0, 1, 1000)
-    x_norm, lbda = stats.boxcox(x)
-    print(x_norm, lbda)
-    return (x_norm, lbda)
-'''
-'''
-def exitProcessor():
+def exit_processor():
     root.destroy()
     rankingFile.close()
 '''
 
-'''
-resize the width or height to make the picture fit our window
-Since the pictures have been cut as 224*224, resize function is not needed actually
-'''
-def resize(imgFile, MODE="HEIGHT"):         # WIDTH/HEIGHT MODE sets width/height unchangeable;
-    src_width, src_height = imgFile.width, imgFile.height
-    resizeTuple = (PHOTO_WIDTH, int(PHOTO_WIDTH/src_width * src_height)) if MODE == "WIDTH" else (int(PHOTO_HEIGHT/src_height*src_width), PHOTO_HEIGHT)
-    return imgFile.resize(resizeTuple)
+
+def resize(img_file, mode=MODE):         # WIDTH/HEIGHT MODE sets width/height unchangeable;
+    """
+    Resize the width or height to make the picture fit our window
+    Since the pictures have been cut as 224*224, resize function is not needed actually
+    (Keep for the not-standard-picture test and reuse)
+    """
+    src_width, src_height = img_file.width, img_file.height
+    mode_map = {
+        "WIDTH":  (PHOTO_WIDTH, int(PHOTO_WIDTH/src_width * src_height)),
+        "HEIGHT": (int(PHOTO_HEIGHT/src_height*src_width), PHOTO_HEIGHT),
+    }
+    return img_file.resize(mode_map[mode])
 
 
-'''
-callback function when click the rank button
-'''
-def rankit(event):
-    buttonIndex = rankButton.index(event.widget)
-    rank = 50 + buttonIndex*10
-    ranking_record.write(imgName + ";" + str(rank))
+def rank_it(event):
+    """ callback function when click the rank button """
+    button_index = rank_button.index(event.widget)
+    rank = 50 + button_index*10
+    ranking_record.write(img_name + ";" + str(rank))
     ranking_record.write('\n')
-    nextImg()
-    progressRefresh()
+    next_img()
+    progress_refresh()
 
 
-'''
-Generate rankButtons in range(50,101,10)
-'''
-def rankButtonGenerator():
+def rank_button_generator():
+    """ Generate rank_buttons (50,60,70,80,90,100) """
     for i in range(6):
-        rankButton[i] = Button(interactFrame, text=str(50+10*i))
-        rankButton[i].bind("<Button-1>", rankit)
-        rankButton[i].pack(side=LEFT)
+        rank_button[i] = tk.Button(interact_frame, text=str(50+10*i))
+        rank_button[i].bind("<Button-1>", rank_it)
+        rank_button[i].pack(side=LEFT)
 
-'''
-change img when rank confirmed to create a loop
-'''
-def nextImg():
-    global imgName, imgIndex, imgLabel
-    if imgLabel:
-        imgLabel.destroy()
+
+def next_img():
+    """ Change img when rank confirmed to create a loop """
+    global img_name, img_index, img_label
+    if img_label:
+        img_label.destroy()
     while True:
-        imgIndex += 1
-        if imgIndex>=len(imgNames):
+        img_index += 1
+        if img_index >= len(img_names):
             showinfo(TITLE, "Thank you for the ranking!")
             root.destroy()
             sys.exit()
-        imgName = imgNames[imgIndex]
-        if not imgName in imgNameRecords:
+        img_name = img_names[img_index]
+        if img_name not in img_name_records:
             break
         if not os.path.exists(PATH):
-            showerror(TITLE, "Traning set not found.")
+            showerror(TITLE, "Training set not found.")
             root.destroy()
             sys.exit()
-    imgFile = resize(Image.open(PATH + imgName))
-    img = ImageTk.PhotoImage(imgFile)
-    imgLabel = Label(pictureFrame, image=img)
-    imgLabel.pack(side=LEFT)
-    storage.append(img)
-
-'''
-Refresh the progressLabel
-'''
-def progressRefresh():
-    progressText.set("{0}/{1}".format(imgIndex+1, len(imgNames)))
+    img_file = resize(Image.open(PATH + img_name))
+    img = ImageTk.PhotoImage(img_file)
+    img_label = tk.Label(picture_frame, image=img)
+    img_label.pack(side=LEFT)
+    storage.append(img)     # This is for avoiding the Garbage-Collection deletes the picture.
 
 
-'''
-Read the file if existed
-'''
+def progress_refresh():
+    """ Refresh the progress_label """
+    progress_text.set("{presentIndex}/{total}".format(presentIndex=img_index+1, total=len(img_names)))
+
+
+""" Initialize """
+storage = []
+img_index = -1
+img_label = {}
+img_name = ""
+
+""" Read the file if existed """
 if not os.path.exists("ranking_record.txt"):
     f = open("ranking_record.txt", 'w')
     f.close()
 ranking_record = open("ranking_record.txt", 'r+')
 records = ranking_record.readlines()
-imgNameRecords = [record.split(';')[0] for record in records]
-recordNum = len(records)
-imgNames = os.listdir(PATH)
-
-if recordNum>=len(imgNames):
+img_name_records = [record.split(';')[0] for record in records]
+record_num = len(records)
+img_names = os.listdir(PATH)
+if record_num >= len(img_names):
     showinfo(TITLE, "You've already completed the ranking!")
     sys.exit()
 
-'''
-GUI drawing
-'''
-root = Tk()
+""" GUI drawing """
+root = tk.Tk()
 root.title("Ranking Data Collection")
 root.geometry("400x300+450+200")
-pictureFrame = Frame(root, width=PHOTO_WIDTH, height=PHOTO_HEIGHT)
-interactFrame = Frame(root, width=PHOTO_WIDTH, height=50)
-pictureFrame.pack(side=TOP)
-interactFrame.pack(side=TOP)
-rankButton = [0]*6
-rankButtonGenerator()
-nextImg()
+picture_frame = tk.Frame(root, width=PHOTO_WIDTH, height=PHOTO_HEIGHT)
+interact_frame = tk.Frame(root, width=PHOTO_WIDTH, height=50)
+picture_frame.pack(side=TOP)
+interact_frame.pack(side=TOP)
+rank_button = [0]*6
+rank_button_generator()
+next_img()
 
+""" Generate progress_label and welcomeInfo """
+progress_text = tk.StringVar()
+progress_text.set("{present_index}/{total}".format(present_index=record_num+1, total=len(img_names)))
+progress_label = tk.Label(root, textvariable=progress_text)
+progress_label.pack(side=BOTTOM)
 
-'''
-Generate progressLabel and welcomeInfo
-'''
-progressText = StringVar()
-progressText.set("{0}/{1}".format(recordNum+1, len(imgNames)))
-progressLabel = Label(root, textvariable=progressText)
-progressLabel.pack(side=BOTTOM)
-
-if not recordNum:
+if not record_num:
     showinfo(TITLE, "Welcome to face ranking data collection system")
 else:
-    showinfo(TITLE, "Ranking progress {0}/{1}, keep going!".format(recordNum,len(imgNames)))
+    showinfo(TITLE, "Ranking progress {done}/{total}, keep going!".format(done=record_num, total=len(img_names)))
 root.mainloop()
 ranking_record.close()
