@@ -77,7 +77,7 @@ def next_img():
 
 def progress_refresh():
     """ Refresh the progress_label """
-    progress_text.set("{presentIndex}/{total}".format(presentIndex=img_index+1, total=len(img_names)))
+    progress_text.set("{present_index}/{total}".format(present_index=img_index+1, total=len(img_names)))
 
 
 """ Initialize """
@@ -94,7 +94,7 @@ ranking_record = open("ranking_record.txt", 'r+')
 records = ranking_record.readlines()
 img_name_records = [record.split(';')[0] for record in records]
 record_num = len(records)
-img_names = os.listdir(PATH)
+img_names = list(set(os.listdir(PATH)))
 if record_num >= len(img_names):
     showinfo(TITLE, "You've already completed the ranking!")
     sys.exit()
