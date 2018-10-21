@@ -19,11 +19,14 @@ for file_name in os.listdir(PATH):
         records[i][img_name] = img_rank
     i += 1
 
+records_num = len(records)
+averages = [sum(record.values())/records_num for record in records]
+proportions = [sum(averages)/average for average in averages]
+weights = [proportion/sum(proportions) for proportion in proportions]
+
 record_file = open("average_ranking.txt", 'w')
 for img_name in sorted(records[0].keys()):
-    S = 0
-    for record in records:
-        S += record[img_name]
-    average_record = "{img_name};{rank}\n".format(img_name=img_name, rank=S/len(records))
+    rank = sum([records[i][img_name] * weights[i] for i in range(records_num)])
+    average_record = "{img_name};{rank}\n".format(img_name=img_name, rank=rank)
     record_file.write(average_record)
 record_file.close()
